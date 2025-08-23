@@ -3,13 +3,15 @@
 
 
 Flixly is a modern **movie discovery platform** built with HTML, CSS, and JavaScript.  
-It integrates with **TMDB API** to let you search, explore, and favorite movies — all in a clean, responsive UI with dark/light theme support.  
+It integrates with **TMDB API** to let you search, explore, and favorite and track watched movies — all in a clean, responsive UI with dark/light theme support.  
 
 ---
 
 ## ✨ Features
 - 🎥 **Browse & Search** — find movies by title, genre, year, and popularity.  
-- ⭐ **Favorites** — save movies you love with a single click.  
+- ⭐ **Favorites** — save movies you love with a single click.
+-✅ **Watched Section** — mark movies you’ve already seen and track your watch history.
+-🌍 **Language Filter** — browse movies in your preferred language (auto-fetched from TMDB).
 - 🌙 **Dark / Light Mode** — toggle themes with one click (stored in localStorage).  
 - 📱 **Responsive Design** — optimized for desktop, tablet, and mobile.  
 - ⚡ **Hover Overlays** — see ratings and quick-favorite buttons instantly.  
@@ -22,7 +24,7 @@ It integrates with **TMDB API** to let you search, explore, and favorite movies 
 
 ### 1. Clone Repo
 ```bash
-git clone https://github.com/YOUR-USERNAME/flixly.git
+git clone https://github.com/bhavya21A/flixly.git
 cd flixly
 ````
 

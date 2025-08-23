@@ -18,19 +18,25 @@
   <!-- Header -->
   <header>
     <h1>
-  <img src="logo.png" alt="Flixly Logo" class="logo">
-  Flixly
-</h1>
-
+      <img src="logo.png" alt="Flixly Logo" class="logo">
+      Flixly
+    </h1>
 
     <div class="header-actions">
-      <!-- Theme toggle with icons -->
+      <!-- Theme toggle -->
       <button id="theme-toggle" class="icon-btn" aria-label="Toggle theme">
         <i class="fa-solid fa-sun"></i>
       </button>
 
-      <!-- Favorites open -->
-      <button id="favorites-btn" title="View favorites"><i class="fa-solid fa-heart" style="color: red;"></i></button>
+      <!-- Favorites button -->
+      <button id="favorites-btn" title="View favorites">
+        <i class="fa-solid fa-heart" style="color: red;"></i>
+      </button>
+
+      <!-- Watched button -->
+      <button id="watched-btn" title="View watched">
+        <i class="fa-solid fa-eye" style="color: lime;"></i>
+      </button>
     </div>
   </header>
 
@@ -56,7 +62,6 @@
 
     <select id="year-filter" title="Year">
       <option value="">Any Year</option>
-      <!-- Add a few useful ranges -->
       <option value="2025">2025</option>
       <option value="2024">2024</option>
       <option value="2023">2023</option>
@@ -65,6 +70,12 @@
       <option value="2020">2020</option>
       <option value="2019">2019</option>
       <option value="2018">2018</option>
+    </select>
+
+    <!-- Language Filter -->
+    <select id="language-filter" title="Language">
+      <option value="">All Languages</option>
+      <!-- Options will be dynamically populated by JS -->
     </select>
 
     <select id="sort-filter" title="Sort by">
@@ -105,12 +116,458 @@
     <div class="modal-content">
       <span id="closeFavorites" class="close">&times;</span>
       <div class="modal-header-row">
-        <h2><i class="fa-solid fa-heart" style="color: red;"></i>My Favorites</h2>
+        <h2><i class="fa-solid fa-heart" style="color: red;"></i> My Favorites</h2>
         <button id="clear-favorites" class="ghost-btn" title="Clear all favorites">
           <i class="fa-solid fa-trash"></i> Clear All
         </button>
       </div>
       <div id="favorites-list"></div>
+    </div>
+  </div>
+
+  <!-- Watched Modal -->
+  <div id="watched-modal" class="modal" role="dialog" aria-modal="true">
+    <div class="modal-content">
+      <span id="closeWatched" class="close">&times;</span>
+      <div class="modal-header-row">
+        <h2><i class="fa-solid fa-eye" style="color: lime;"></i> Watched Movies</h2>
+        <button id="clear-watched" class="ghost-btn" title="Clear all watched">
+          <i class="fa-solid fa-trash"></i> Clear All
+        </button>
+      </div>
+      <div id="watched-list"></div>
+    </div>
+  </div>
+
+  <script src="script.js" defer></script>
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Flixly</title>
+
+  <!-- Font Awesome for icons -->
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    referrerpolicy="no-referrer"
+  />
+
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- Header -->
+  <header>
+    <h1>
+      <img src="logo.png" alt="Flixly Logo" class="logo">
+      Flixly
+    </h1>
+
+    <div class="header-actions">
+      <!-- Theme toggle -->
+      <button id="theme-toggle" class="icon-btn" aria-label="Toggle theme">
+        <i class="fa-solid fa-sun"></i>
+      </button>
+
+      <!-- Favorites button -->
+      <button id="favorites-btn" title="View favorites">
+        <i class="fa-solid fa-heart" style="color: red;"></i>
+      </button>
+
+      <!-- Watched button -->
+      <button id="watched-btn" title="View watched">
+        <i class="fa-solid fa-eye" style="color: lime;"></i>
+      </button>
+    </div>
+  </header>
+
+  <!-- Controls -->
+  <section class="controls" aria-label="Filters and search">
+    <input id="search-input" type="text" placeholder="Search movies or series..." />
+    <button id="search-btn"><i class="fa-solid fa-magnifying-glass"></i> Search</button>
+
+    <select id="genre-filter" title="Genre">
+      <option value="">All Genres</option>
+      <option value="28">Action</option>
+      <option value="12">Adventure</option>
+      <option value="16">Animation</option>
+      <option value="35">Comedy</option>
+      <option value="80">Crime</option>
+      <option value="18">Drama</option>
+      <option value="14">Fantasy</option>
+      <option value="27">Horror</option>
+      <option value="9648">Mystery</option>
+      <option value="878">Science Fiction</option>
+      <option value="53">Thriller</option>
+    </select>
+
+    <select id="year-filter" title="Year">
+      <option value="">Any Year</option>
+      <option value="2025">2025</option>
+      <option value="2024">2024</option>
+      <option value="2023">2023</option>
+      <option value="2022">2022</option>
+      <option value="2021">2021</option>
+      <option value="2020">2020</option>
+      <option value="2019">2019</option>
+      <option value="2018">2018</option>
+    </select>
+
+    <!-- Language Filter -->
+    <select id="language-filter" title="Language">
+      <option value="">All Languages</option>
+      <!-- Options will be dynamically populated by JS -->
+    </select>
+
+    <select id="sort-filter" title="Sort by">
+      <option value="popularity.desc">Popularity ↓</option>
+      <option value="popularity.asc">Popularity ↑</option>
+      <option value="vote_average.desc">Rating ↓</option>
+      <option value="vote_average.asc">Rating ↑</option>
+      <option value="primary_release_date.desc">Release Date ↓</option>
+      <option value="primary_release_date.asc">Release Date ↑</option>
+    </select>
+  </section>
+
+  <!-- Movies grid -->
+  <main id="movies" aria-live="polite"></main>
+
+  <!-- Loading -->
+  <div id="loading" class="loading hidden">
+    <div class="spinner"></div>
+  </div>
+
+  <!-- Pagination -->
+  <div class="pagination">
+    <button id="prev"><i class="fa-solid fa-chevron-left"></i> Prev</button>
+    <span id="pageInfo">Page 1</span>
+    <button id="next">Next <i class="fa-solid fa-chevron-right"></i></button>
+  </div>
+
+  <!-- Details Modal -->
+  <div id="modal" class="modal" role="dialog" aria-modal="true">
+    <div class="modal-content">
+      <span id="closeModal" class="close">&times;</span>
+      <div id="modalDetails"></div>
+    </div>
+  </div>
+
+  <!-- Favorites Modal -->
+  <div id="favorites-modal" class="modal" role="dialog" aria-modal="true">
+    <div class="modal-content">
+      <span id="closeFavorites" class="close">&times;</span>
+      <div class="modal-header-row">
+        <h2><i class="fa-solid fa-heart" style="color: red;"></i> My Favorites</h2>
+        <button id="clear-favorites" class="ghost-btn" title="Clear all favorites">
+          <i class="fa-solid fa-trash"></i> Clear All
+        </button>
+      </div>
+      <div id="favorites-list"></div>
+    </div>
+  </div>
+
+  <!-- Watched Modal -->
+  <div id="watched-modal" class="modal" role="dialog" aria-modal="true">
+    <div class="modal-content">
+      <span id="closeWatched" class="close">&times;</span>
+      <div class="modal-header-row">
+        <h2><i class="fa-solid fa-eye" style="color: lime;"></i> Watched Movies</h2>
+        <button id="clear-watched" class="ghost-btn" title="Clear all watched">
+          <i class="fa-solid fa-trash"></i> Clear All
+        </button>
+      </div>
+      <div id="watched-list"></div>
+    </div>
+  </div>
+
+  <script src="script.js" defer></script>
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Flixly</title>
+
+  <!-- Font Awesome for icons -->
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    referrerpolicy="no-referrer"
+  />
+
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- Header -->
+  <header>
+    <h1>
+      <img src="logo.png" alt="Flixly Logo" class="logo">
+      Flixly
+    </h1>
+
+    <div class="header-actions">
+      <!-- Theme toggle -->
+      <button id="theme-toggle" class="icon-btn" aria-label="Toggle theme">
+        <i class="fa-solid fa-sun"></i>
+      </button>
+
+      <!-- Favorites button -->
+      <button id="favorites-btn" title="View favorites">
+        <i class="fa-solid fa-heart" style="color: red;"></i>
+      </button>
+
+      <!-- Watched button -->
+      <button id="watched-btn" title="View watched">
+        <i class="fa-solid fa-eye" style="color: lime;"></i>
+      </button>
+    </div>
+  </header>
+
+  <!-- Controls -->
+  <section class="controls" aria-label="Filters and search">
+    <input id="search-input" type="text" placeholder="Search movies or series..." />
+    <button id="search-btn"><i class="fa-solid fa-magnifying-glass"></i> Search</button>
+
+    <select id="genre-filter" title="Genre">
+      <option value="">All Genres</option>
+      <option value="28">Action</option>
+      <option value="12">Adventure</option>
+      <option value="16">Animation</option>
+      <option value="35">Comedy</option>
+      <option value="80">Crime</option>
+      <option value="18">Drama</option>
+      <option value="14">Fantasy</option>
+      <option value="27">Horror</option>
+      <option value="9648">Mystery</option>
+      <option value="878">Science Fiction</option>
+      <option value="53">Thriller</option>
+    </select>
+
+    <select id="year-filter" title="Year">
+      <option value="">Any Year</option>
+      <option value="2025">2025</option>
+      <option value="2024">2024</option>
+      <option value="2023">2023</option>
+      <option value="2022">2022</option>
+      <option value="2021">2021</option>
+      <option value="2020">2020</option>
+      <option value="2019">2019</option>
+      <option value="2018">2018</option>
+    </select>
+
+    <!-- Language Filter -->
+    <select id="language-filter" title="Language">
+      <option value="">All Languages</option>
+      <!-- Options will be dynamically populated by JS -->
+    </select>
+
+    <select id="sort-filter" title="Sort by">
+      <option value="popularity.desc">Popularity ↓</option>
+      <option value="popularity.asc">Popularity ↑</option>
+      <option value="vote_average.desc">Rating ↓</option>
+      <option value="vote_average.asc">Rating ↑</option>
+      <option value="primary_release_date.desc">Release Date ↓</option>
+      <option value="primary_release_date.asc">Release Date ↑</option>
+    </select>
+  </section>
+
+  <!-- Movies grid -->
+  <main id="movies" aria-live="polite"></main>
+
+  <!-- Loading -->
+  <div id="loading" class="loading hidden">
+    <div class="spinner"></div>
+  </div>
+
+  <!-- Pagination -->
+  <div class="pagination">
+    <button id="prev"><i class="fa-solid fa-chevron-left"></i> Prev</button>
+    <span id="pageInfo">Page 1</span>
+    <button id="next">Next <i class="fa-solid fa-chevron-right"></i></button>
+  </div>
+
+  <!-- Details Modal -->
+  <div id="modal" class="modal" role="dialog" aria-modal="true">
+    <div class="modal-content">
+      <span id="closeModal" class="close">&times;</span>
+      <div id="modalDetails"></div>
+    </div>
+  </div>
+
+  <!-- Favorites Modal -->
+  <div id="favorites-modal" class="modal" role="dialog" aria-modal="true">
+    <div class="modal-content">
+      <span id="closeFavorites" class="close">&times;</span>
+      <div class="modal-header-row">
+        <h2><i class="fa-solid fa-heart" style="color: red;"></i> My Favorites</h2>
+        <button id="clear-favorites" class="ghost-btn" title="Clear all favorites">
+          <i class="fa-solid fa-trash"></i> Clear All
+        </button>
+      </div>
+      <div id="favorites-list"></div>
+    </div>
+  </div>
+
+  <!-- Watched Modal -->
+  <div id="watched-modal" class="modal" role="dialog" aria-modal="true">
+    <div class="modal-content">
+      <span id="closeWatched" class="close">&times;</span>
+      <div class="modal-header-row">
+        <h2><i class="fa-solid fa-eye" style="color: lime;"></i> Watched Movies</h2>
+        <button id="clear-watched" class="ghost-btn" title="Clear all watched">
+          <i class="fa-solid fa-trash"></i> Clear All
+        </button>
+      </div>
+      <div id="watched-list"></div>
+    </div>
+  </div>
+
+  <script src="script.js" defer></script>
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Flixly</title>
+
+  <!-- Font Awesome for icons -->
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    referrerpolicy="no-referrer"
+  />
+
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- Header -->
+  <header>
+    <h1>
+      <img src="logo.png" alt="Flixly Logo" class="logo">
+      Flixly
+    </h1>
+
+    <div class="header-actions">
+      <!-- Theme toggle -->
+      <button id="theme-toggle" class="icon-btn" aria-label="Toggle theme">
+        <i class="fa-solid fa-sun"></i>
+      </button>
+
+      <!-- Favorites button -->
+      <button id="favorites-btn" title="View favorites">
+        <i class="fa-solid fa-heart" style="color: red;"></i>
+      </button>
+
+      <!-- Watched button -->
+      <button id="watched-btn" title="View watched">
+        <i class="fa-solid fa-eye" style="color: lime;"></i>
+      </button>
+    </div>
+  </header>
+
+  <!-- Controls -->
+  <section class="controls" aria-label="Filters and search">
+    <input id="search-input" type="text" placeholder="Search movies or series..." />
+    <button id="search-btn"><i class="fa-solid fa-magnifying-glass"></i> Search</button>
+
+    <select id="genre-filter" title="Genre">
+      <option value="">All Genres</option>
+      <option value="28">Action</option>
+      <option value="12">Adventure</option>
+      <option value="16">Animation</option>
+      <option value="35">Comedy</option>
+      <option value="80">Crime</option>
+      <option value="18">Drama</option>
+      <option value="14">Fantasy</option>
+      <option value="27">Horror</option>
+      <option value="9648">Mystery</option>
+      <option value="878">Science Fiction</option>
+      <option value="53">Thriller</option>
+    </select>
+
+    <select id="year-filter" title="Year">
+      <option value="">Any Year</option>
+      <option value="2025">2025</option>
+      <option value="2024">2024</option>
+      <option value="2023">2023</option>
+      <option value="2022">2022</option>
+      <option value="2021">2021</option>
+      <option value="2020">2020</option>
+      <option value="2019">2019</option>
+      <option value="2018">2018</option>
+    </select>
+
+    <!-- Language Filter -->
+    <select id="language-filter" title="Language">
+      <option value="">All Languages</option>
+      <!-- Options will be dynamically populated by JS -->
+    </select>
+
+    <select id="sort-filter" title="Sort by">
+      <option value="popularity.desc">Popularity ↓</option>
+      <option value="popularity.asc">Popularity ↑</option>
+      <option value="vote_average.desc">Rating ↓</option>
+      <option value="vote_average.asc">Rating ↑</option>
+      <option value="primary_release_date.desc">Release Date ↓</option>
+      <option value="primary_release_date.asc">Release Date ↑</option>
+    </select>
+  </section>
+
+  <!-- Movies grid -->
+  <main id="movies" aria-live="polite"></main>
+
+  <!-- Loading -->
+  <div id="loading" class="loading hidden">
+    <div class="spinner"></div>
+  </div>
+
+  <!-- Pagination -->
+  <div class="pagination">
+    <button id="prev"><i class="fa-solid fa-chevron-left"></i> Prev</button>
+    <span id="pageInfo">Page 1</span>
+    <button id="next">Next <i class="fa-solid fa-chevron-right"></i></button>
+  </div>
+
+  <!-- Details Modal -->
+  <div id="modal" class="modal" role="dialog" aria-modal="true">
+    <div class="modal-content">
+      <span id="closeModal" class="close">&times;</span>
+      <div id="modalDetails"></div>
+    </div>
+  </div>
+
+  <!-- Favorites Modal -->
+  <div id="favorites-modal" class="modal" role="dialog" aria-modal="true">
+    <div class="modal-content">
+      <span id="closeFavorites" class="close">&times;</span>
+      <div class="modal-header-row">
+        <h2><i class="fa-solid fa-heart" style="color: red;"></i> My Favorites</h2>
+        <button id="clear-favorites" class="ghost-btn" title="Clear all favorites">
+          <i class="fa-solid fa-trash"></i> Clear All
+        </button>
+      </div>
+      <div id="favorites-list"></div>
+    </div>
+  </div>
+
+  <!-- Watched Modal -->
+  <div id="watched-modal" class="modal" role="dialog" aria-modal="true">
+    <div class="modal-content">
+      <span id="closeWatched" class="close">&times;</span>
+      <div class="modal-header-row">
+        <h2><i class="fa-solid fa-eye" style="color: lime;"></i> Watched Movies</h2>
+        <button id="clear-watched" class="ghost-btn" title="Clear all watched">
+          <i class="fa-solid fa-trash"></i> Clear All
+        </button>
+      </div>
+      <div id="watched-list"></div>
     </div>
   </div>
 
