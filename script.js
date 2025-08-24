@@ -6,7 +6,8 @@ let currentQuery = "";
 let currentGenre = "";
 let currentYear = "";
 let currentSort = "popularity.desc";
-let currentLang = ""; // NEW: language filter
+let currentLang = "";
+let currentMood = "";
 let loading = false;
 
 let favorites = JSON.parse(localStorage.getItem("favorites")) || [];
@@ -31,6 +32,7 @@ const genreFilter = document.getElementById("genre-filter");
 const yearFilter = document.getElementById("year-filter");
 const sortFilter = document.getElementById("sort-filter");
 const languageFilter = document.getElementById("language-filter");
+const moodFilter = document.getElementById("mood-filter");
 
 const loadingDiv = document.getElementById("loading");
 
@@ -51,24 +53,78 @@ const clearWatchedBtn = document.getElementById("clear-watched");
 if (localStorage.getItem("theme") === "light") document.body.classList.add("light");
 setThemeIcon();
 
-// ===== Populate Language Filter =====
-const languages = [
-  { code: "", name: "All Languages" },
-  { code: "en", name: "English" },
-  { code: "hi", name: "Hindi" },
-  { code: "es", name: "Spanish" },
-  { code: "fr", name: "French" },
-  { code: "ja", name: "Japanese" },
-  { code: "ko", name: "Korean" },
-  { code: "zh", name: "Chinese" }
+// ===== Populate Languages Dynamically =====
+async function populateLanguages() {
+  try {
+    const res = await fetch(`https://api.themoviedb.org/3/configuration/languages?api_key=${API_KEY}`);
+    const data = await res.json();
+    const defaultOpt = document.createElement("option");
+    defaultOpt.value = "";
+    defaultOpt.textContent = "All Languages";
+    languageFilter.appendChild(defaultOpt);
+
+    data.forEach(lang => {
+      const opt = document.createElement("option");
+      opt.value = lang.iso_639_1;
+      opt.textContent = lang.english_name || lang.iso_639_1;
+      languageFilter.appendChild(opt);
+    });
+  } catch (err) {
+    console.error("Error fetching languages:", err);
+    const opt = document.createElement("option");
+    opt.value = "";
+    opt.textContent = "All Languages";
+    languageFilter.appendChild(opt);
+  }
+}
+populateLanguages();
+const languageSearchInput = document.getElementById("language-search");
+
+languageSearchInput.addEventListener("input", () => {
+  const searchValue = languageSearchInput.value.toLowerCase();
+  Array.from(languageFilter.options).forEach(option => {
+    const text = option.text.toLowerCase();
+    option.style.display = text.includes(searchValue) ? "" : "none";
+  });
+});
+
+// ===== Populate Year Filter Dynamically =====
+const currentYearValue = new Date().getFullYear();
+for (let y = currentYearValue + 5; y >= 1980; y--) {
+  const opt = document.createElement("option");
+  opt.value = y;
+  opt.textContent = y;
+  yearFilter.appendChild(opt);
+}
+
+// ===== Populate Mood Filter =====
+const moods = [
+  { code: "", name: "All Moods" },
+  { code: "happy", name: "Happy" },
+  { code: "sad", name: "Sad" },
+  { code: "romantic", name: "Romantic" },
+  { code: "thrilling", name: "Thrilling" },
+  { code: "scary", name: "Scary" },
+  { code: "funny", name: "Funny" }
 ];
 
-languages.forEach(lang => {
+moodFilter.innerHTML = "";
+moods.forEach(m => {
   const opt = document.createElement("option");
-  opt.value = lang.code;
-  opt.textContent = lang.name;
-  languageFilter.appendChild(opt);
+  opt.value = m.code;
+  opt.textContent = m.name;
+  moodFilter.appendChild(opt);
 });
+
+// ===== Mood Map =====
+const moodMap = {
+  happy: [35, 10751],
+  sad: [18],
+  romantic: [10749],
+  thrilling: [53, 9648],
+  scary: [27],
+  funny: [35]
+};
 
 // ===== Fetch Movies =====
 async function fetchMovies() {
@@ -81,6 +137,12 @@ async function fetchMovies() {
   if (currentGenre) url += `&with_genres=${currentGenre}`;
   if (currentYear) url += `&primary_release_year=${currentYear}`;
   if (currentLang) url += `&with_original_language=${currentLang}`;
+  if (currentMood) {
+    const genresForMood = moodMap[currentMood];
+    if (genresForMood && genresForMood.length > 0) {
+      url += `&with_genres=${genresForMood.join(",")}`;
+    }
+  }
 
   try {
     const res = await fetch(url);
@@ -89,7 +151,7 @@ async function fetchMovies() {
 
     moviesDiv.innerHTML = "";
     if (movies.length === 0) {
-      moviesDiv.innerHTML = `<div class="empty"><img src="https://cdn-icons-png.flaticon.com/512/4076/4076549.png" /><p>No results found 😔</p></div>`;
+      moviesDiv.innerHTML = `<div class="empty"><img src="https://cdn-icons-png.flaticon.com/512/4076/4076549.png" alt="No results"/><p>No results found 😔</p></div>`;
       pageInfo.textContent = `Page ${currentPage}`;
       return;
     }
@@ -97,7 +159,7 @@ async function fetchMovies() {
     displayMovies(movies);
     pageInfo.textContent = `Page ${currentPage}`;
   } catch {
-    moviesDiv.innerHTML = `<div class="empty"><img src="https://cdn-icons-png.flaticon.com/512/3917/3917375.png" /><p>Error fetching movies</p></div>`;
+    moviesDiv.innerHTML = `<div class="empty"><img src="https://cdn-icons-png.flaticon.com/512/3917/3917375.png" alt="Error"/><p>Error fetching movies</p></div>`;
   } finally {
     loading = false;
     loadingDiv.classList.add("hidden");
@@ -128,10 +190,8 @@ function displayMovies(movies) {
       <div class="rating-inline">⭐ ${rating}</div>
     `;
 
-    // Open details modal
     div.querySelector("img").addEventListener("click", () => showDetails(m.id, type));
 
-    // Toggle favorite
     div.querySelector(".fav-btn").addEventListener("click", e => {
       e.stopPropagation();
       toggleFavorite(m);
@@ -141,7 +201,6 @@ function displayMovies(movies) {
       icon.classList.toggle("fa-regular");
     });
 
-    // Toggle watched
     div.querySelector(".watched-btn").addEventListener("click", e => {
       e.stopPropagation();
       toggleWatched(m);
@@ -175,7 +234,7 @@ function toggleWatched(movie) {
 function renderFavorites() {
   favList.innerHTML = "";
   if (favorites.length === 0) {
-    favList.innerHTML = `<div class="empty"><img src="https://cdn-icons-png.flaticon.com/512/6598/6598519.png" /><p>No favorites yet ❤️</p></div>`;
+    favList.innerHTML = `<div class="empty"><img src="https://cdn-icons-png.flaticon.com/512/6598/6598519.png" alt="Empty favorites"/><p>No favorites yet ❤️</p></div>`;
     return;
   }
   favorites.forEach(m => {
@@ -191,25 +250,35 @@ function renderFavorites() {
 function renderWatched() {
   watchedList.innerHTML = "";
   if (watched.length === 0) {
-    watchedList.innerHTML = `<div class="empty"><img src="https://cdn-icons-png.flaticon.com/512/1077/1077035.png" /><p>No watched movies yet 👁️</p></div>`;
+    watchedList.innerHTML = `<div class="empty"><img src="https://cdn-icons-png.flaticon.com/512/1077/1077035.png" alt="Empty watched"/><p>No watched movies yet 👁️</p></div>`;
     return;
   }
   watched.forEach(m => {
     const div = document.createElement("div");
     const poster = m.poster_path ? IMG_URL + m.poster_path : "https://via.placeholder.com/180x250";
-    div.classList.add("fav-item");
+    div.classList.add("watched-item"); // ✅ FIXED
     div.innerHTML = `<img src="${poster}" alt="${m.title || m.name}"><span>${m.title || m.name}</span>`;
     watchedList.appendChild(div);
   });
 }
 
-// ===== Details Modal =====
 async function showDetails(id, type) {
   const url = `https://api.themoviedb.org/3/${type === "Series" ? "tv" : "movie"}/${id}?api_key=${API_KEY}&language=en-US`;
   try {
     const res = await fetch(url);
     const m = await res.json();
-    const poster = m.poster_path ? IMG_URL + m.poster_path : "https://via.placeholder.com/180x250";
+    const poster = m.poster_path ? IMG_URL + m.poster_path : "https://via.placeholder.com/220x330";
+
+    const justwatchUrl = `https://www.justwatch.com/in/search?q=${encodeURIComponent(m.title || m.name)}`;
+    const googleUrl = `https://www.google.com/search?q=${encodeURIComponent(m.title || m.name)}`;
+
+    let creditsRes = await fetch(`https://api.themoviedb.org/3/${type === "Series" ? "tv" : "movie"}/${id}/credits?api_key=${API_KEY}`);
+    let creditsData = await creditsRes.json();
+    const cast = creditsData.cast ? creditsData.cast.slice(0, 5).map(c => c.name).join(", ") : "N/A";
+    const director = creditsData.crew ? creditsData.crew.filter(c => c.job === "Director").map(c => c.name).join(", ") : "N/A";
+
+    const langs = m.spoken_languages ? m.spoken_languages.map(l => l.english_name).join(", ") : "N/A";
+
     modalDetails.innerHTML = `
       <div class="modal-movie">
         <img src="${poster}" alt="${m.title || m.name}">
@@ -217,12 +286,20 @@ async function showDetails(id, type) {
           <h2>${m.title || m.name}</h2>
           <p><strong>Release:</strong> ${(m.release_date || m.first_air_date || "N/A")}</p>
           <p><strong>Rating:</strong> ⭐ ${m.vote_average || "—"}</p>
+          <p><strong>Director:</strong> ${director}</p>
+          <p><strong>Cast:</strong> ${cast}</p>
+          <p><strong>Languages:</strong> ${langs}</p>
           <p>${m.overview || "No description available."}</p>
+          <div class="modal-links">
+            <a href="${justwatchUrl}" target="_blank">Watch on JustWatch</a>
+            <a href="${googleUrl}" target="_blank">Search on Google</a>
+          </div>
         </div>
       </div>
     `;
     modal.classList.add("open");
-  } catch {
+  } catch (err) {
+    console.error(err);
     alert("Error fetching movie details.");
   }
 }
@@ -253,11 +330,40 @@ genreFilter.addEventListener("change", () => { currentGenre = genreFilter.value;
 yearFilter.addEventListener("change", () => { currentYear = yearFilter.value; currentPage = 1; fetchMovies(); });
 sortFilter.addEventListener("change", () => { currentSort = sortFilter.value; currentPage = 1; fetchMovies(); });
 languageFilter.addEventListener("change", () => { currentLang = languageFilter.value; currentPage = 1; fetchMovies(); });
+moodFilter.addEventListener("change", () => { currentMood = moodFilter.value; currentPage = 1; fetchMovies(); });
 
 themeToggle.addEventListener("click", () => {
   document.body.classList.toggle("light");
   localStorage.setItem("theme", document.body.classList.contains("light") ? "light" : "dark");
   setThemeIcon();
+});
+
+// ===== Header Logo Click - Reset to Home =====
+const logo = document.querySelector("header h1");
+logo.style.cursor = "pointer";
+
+logo.addEventListener("click", () => {
+  currentQuery = "";
+  currentGenre = "";
+  currentYear = "";
+  currentSort = "popularity.desc";
+  currentLang = "";
+  currentMood = "";
+  currentPage = 1;
+
+  searchInput.value = "";
+  genreFilter.value = "";
+  yearFilter.value = ""; // ✅ FIXED reset to default option
+  sortFilter.value = "popularity.desc";
+  languageFilter.value = "";
+  moodFilter.value = "";
+
+  modal.classList.remove("open");
+  favModal.classList.remove("open");
+  watchedModal.classList.remove("open");
+
+  fetchMovies();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 });
 
 // ===== Initial Fetch =====
